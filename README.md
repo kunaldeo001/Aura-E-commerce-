@@ -87,6 +87,6 @@ This project requires both the backend and frontend to be running.
 └── database.sqlite    # SQLite database (generated on start)
 ```
 
-## 📜 License
+### 📜 License
 
 This project is licensed under the MIT License.
