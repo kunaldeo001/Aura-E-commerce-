@@ -62,6 +62,27 @@ app.post('/api/auth/login', async (req, res) => {
     }
 });
 
+/* User Profile Route */
+app.put('/api/users/profile', authenticateToken, async (req, res) => {
+    const { name, email, password } = req.body;
+    if (!name || !email) return res.status(400).json({ error: 'Name and email required' });
+
+    try {
+        if (password) {
+            const hash = await bcrypt.hash(password, 10);
+            await db.run('UPDATE users SET name = ?, email = ?, password_hash = ? WHERE id = ?', [name, email, hash, req.user.id]);
+        } else {
+            await db.run('UPDATE users SET name = ?, email = ? WHERE id = ?', [name, email, req.user.id]);
+        }
+        res.json({ message: 'Profile updated successfully' });
+    } catch (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+            return res.status(400).json({ error: 'Email already exists' });
+        }
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 /* Products Route */
 app.get('/api/products', async (req, res) => {
     const { search, category, sort, minPrice, maxPrice } = req.query;
@@ -142,13 +163,14 @@ app.post('/api/newsletter', async (req, res) => {
 
 /* Checkout Route */
 app.post('/api/checkout', authenticateToken, async (req, res) => {
-    const { items, total, address, paymentMethod } = req.body;
+    const { items, total, address, paymentMethod, discount } = req.body;
     if (!items || items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
     if (!address) return res.status(400).json({ error: 'Address is required' });
     if (!paymentMethod) return res.status(400).json({ error: 'Payment method is required' });
 
     try {
         await db.run('BEGIN TRANSACTION');
+        // If your table has a discount column you'd add it here, otherwise we just store the reduced total.
         const orderResult = await db.run(
             'INSERT INTO orders (user_id, total, address, payment_method) VALUES (?, ?, ?, ?)', 
             [req.user.id, total, address, paymentMethod]
@@ -174,6 +196,25 @@ app.get('/api/orders', authenticateToken, async (req, res) => {
     try {
         const orders = await db.all('SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC', [req.user.id]);
         res.json(orders);
+    } catch (err) {
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
+/* Coupons Route */
+app.post('/api/coupons/validate', async (req, res) => {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Coupon code required' });
+
+    try {
+        const coupon = await db.get('SELECT * FROM coupons WHERE code = ? COLLATE NOCASE AND active = 1', [code]);
+        if (!coupon) return res.status(404).json({ error: 'Invalid or expired coupon' });
+
+        res.json({
+            code: coupon.code,
+            type: coupon.discount_type,
+            value: coupon.discount_value
+        });
     } catch (err) {
         res.status(500).json({ error: 'Database error' });
     }

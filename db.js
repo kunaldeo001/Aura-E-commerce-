@@ -48,19 +48,19 @@ const initialProducts = [
         name: 'Wireless Charging Pad',
         price: 3599,
         category: 'Electronics',
-        image: 'https://images.unsplash.com/photo-1586816879360-004f5b0c51e3?w=800&auto=format&fit=crop',
+        image: 'https://images.unsplash.com/photo-1585336261022-680e295ce3fe?w=800&auto=format&fit=crop',
     },
     {
         name: 'Noise-Canceling Earbuds',
         price: 15999,
         category: 'Audio',
-        image: 'https://images.unsplash.com/photo-1606220588913-b3aec5c9eab8?w=800&auto=format&fit=crop',
+        image: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&auto=format&fit=crop',
     },
     {
         name: 'Luxe Velvet Throw Pillow',
         price: 2499,
         category: 'Home',
-        image: 'https://images.unsplash.com/photo-1584100936595-c0654b55a2e6?w=800&auto=format&fit=crop',
+        image: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&auto=format&fit=crop',
     },
     {
         name: 'Designer Scented Candle',
@@ -72,13 +72,13 @@ const initialProducts = [
         name: 'Canvas Tote Bag',
         price: 3499,
         category: 'Bags',
-        image: 'https://images.unsplash.com/photo-1544816153-12ad4d71cc0d?w=800&auto=format&fit=crop',
+        image: 'https://images.unsplash.com/photo-1622560480605-d83c853bc5c3?w=800&auto=format&fit=crop',
     },
     {
         name: 'Ultra-thin Laptop Sleeve',
         price: 4999,
         category: 'Accessories',
-        image: 'https://images.unsplash.com/photo-1544333346-64e4fe182547?w=800&auto=format&fit=crop',
+        image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=800&auto=format&fit=crop',
     }
 ];
 
@@ -141,7 +141,24 @@ export async function initDb() {
             email TEXT UNIQUE NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT UNIQUE NOT NULL,
+            discount_type TEXT NOT NULL CHECK(discount_type IN ('percentage', 'fixed')),
+            discount_value REAL NOT NULL,
+            active BOOLEAN DEFAULT 1,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     `);
+
+    // Seed coupons if empty
+    const couponCount = await db.get('SELECT COUNT(*) as count FROM coupons');
+    if (couponCount.count === 0) {
+        console.log('Seeding initial coupons...');
+        await db.run("INSERT INTO coupons (code, discount_type, discount_value) VALUES ('WELCOME10', 'percentage', 10)");
+        await db.run("INSERT INTO coupons (code, discount_type, discount_value) VALUES ('MINUS500', 'fixed', 500)");
+    }
 
     // Seed products if empty
     const productCount = await db.get('SELECT COUNT(*) as count FROM products');
