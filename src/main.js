@@ -617,6 +617,13 @@ function renderProducts() {
 // Start application
 initApp();
 
+// Run tilt effect after products are rendered
+const originalRenderProducts = renderProducts;
+renderProducts = function() {
+  originalRenderProducts();
+  initTiltEffect();
+};
+
 // ===================== TOAST =====================
 window.showToast = function (message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -800,42 +807,38 @@ const initCustomCursor = () => {
  * 3D Tilt Effect for Product Cards
  */
 const initTiltEffect = () => {
-  const handleMove = (e) => {
-    const card = e.currentTarget;
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-
-    const rotateX = (y - centerY) / 10;
-    const rotateY = (centerX - x) / 10;
-
-    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-  };
-
-  const handleLeave = (e) => {
-    const card = e.currentTarget;
-    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-  };
-
-  // Use MutationObserver to handle dynamically loaded products
-  const observer = new MutationObserver(() => {
-    const cards = document.querySelectorAll('.product-card');
-    cards.forEach(card => {
-      if (!card.dataset.tiltInit) {
-        card.addEventListener('mousemove', handleMove);
-        card.addEventListener('mouseleave', handleLeave);
-        card.dataset.tiltInit = 'true';
+  const cards = document.querySelectorAll('.product-card');
+  cards.forEach(card => {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotateX = ((y - centerY) / centerY) * -10;
+      const rotateY = ((x - centerX) / centerX) * 10;
+      
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      
+      let glare = card.querySelector('.glare');
+      if (!glare) {
+        glare = document.createElement('div');
+        glare.className = 'glare';
+        card.appendChild(glare);
       }
+      
+      glare.style.transform = `translate(${x - rect.width/2}px, ${y - rect.height/2}px)`;
+      glare.style.opacity = '1';
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      const glare = card.querySelector('.glare');
+      if (glare) glare.style.opacity = '0';
     });
   });
-
-  const grid = document.getElementById('product-grid');
-  if (grid) {
-    observer.observe(grid, { childList: true });
-  }
 };
 
 /**

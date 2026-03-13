@@ -165,7 +165,7 @@ button {
 /* Navbar */
 .navbar {
   position: fixed;
-  top: 0;
+  top: 36px; /* Below the announcement bar */
   width: 100%;
   z-index: 100;
   padding: 1.5rem 0;
@@ -319,6 +319,40 @@ button {
   box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
 }
 
+/* Announcement Bar */
+.announcement-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 36px;
+  background: var(--accent-color);
+  color: white;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 1000;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.scrolling-text {
+  display: flex;
+  white-space: nowrap;
+  animation: scrollText 20s linear infinite;
+  width: max-content;
+}
+
+.scrolling-text span {
+  padding: 0 2rem;
+}
+
+@keyframes scrollText {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Product Grid */
 .products-section {
   padding: var(--spacing-xl) 0;
@@ -381,6 +415,20 @@ button {
 
 .product-card:hover .product-image {
   transform: scale(1.05);
+}
+
+.product-card .glare {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 80%);
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  transition: opacity 0.5s ease;
+  z-index: 10;
 }
 
 .product-badge {
