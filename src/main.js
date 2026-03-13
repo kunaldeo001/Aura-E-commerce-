@@ -1,5 +1,5 @@
 import './style.css'
-import { products, loadProducts } from './products.js'
+import { products, allProducts, loadProducts, findProductById } from './products.js'
 import { initCart, addToCart } from './cart.js'
 
 // Initial state and app logic
@@ -330,7 +330,8 @@ function updateSearchSuggestions() {
   }
   
   // Quick clientside search
-  const matches = window.allProductsCache.filter(p => 
+  const catalog = window.allProductsCache || allProducts;
+  const matches = catalog.filter(p => 
     p.name.toLowerCase().includes(currentSearch.toLowerCase()) || 
     p.category.toLowerCase().includes(currentSearch.toLowerCase())
   ).slice(0, 5); // top 5 results
@@ -673,7 +674,7 @@ async function handleFiltersChanged() {
 }
 
 async function openProductModal(productId) {
-  const product = products.find(p => p.id === productId);
+  const product = findProductById(productId);
   if (!product) return;
 
   const inWishlist = wishlist.some(p => p.id === productId);
@@ -718,7 +719,7 @@ async function openProductModal(productId) {
   window.closeModal = closeProductModal;
 
   // Render Related Products
-  const related = products.filter(p => p.category === product.category && p.id !== productId).slice(0, 2);
+  const related = allProducts.filter(p => p.category === product.category && p.id !== productId).slice(0, 2);
   const relatedContainer = document.getElementById('related-products');
   if (related.length > 0) {
     relatedContainer.innerHTML = related.map(p => `
@@ -806,7 +807,7 @@ function toggleWishlist() {
 }
 
 function toggleWishlistProduct(productId) {
-  const product = products.find(p => p.id === productId);
+  const product = findProductById(productId);
   if (!product) return;
 
   const idx = wishlist.findIndex(p => p.id === productId);

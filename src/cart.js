@@ -1,4 +1,4 @@
-import { products } from './products.js';
+import { findProductById } from './products.js';
 
 let cart = [];
 
@@ -106,7 +106,7 @@ function injectCartHTML() {
 }
 
 export function addToCart(productId) {
-  const product = products.find(p => p.id === productId);
+  const product = findProductById(productId);
   if (!product) return;
 
   const existingItem = cart.find(item => item.id === productId);
