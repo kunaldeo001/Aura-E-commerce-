@@ -41,6 +41,17 @@
   --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+[data-theme="light"] {
+  --bg-color: #f8fafc;
+  --surface-color: rgba(0, 0, 0, 0.03);
+  --surface-hover: rgba(0, 0, 0, 0.06);
+  --border-color: rgba(0, 0, 0, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --glass-bg: rgba(248, 250, 252, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
 /* =====================
    RESET & BASE TYPOGRAPHY
    ===================== */
@@ -61,7 +72,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   cursor: none;
-  /* Hide default cursor */
+  transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
 /* Custom Cursor Styles */
@@ -470,6 +481,18 @@ button {
   animation-delay: 300ms;
 }
 
+/* Scroll Reveal */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* Cart Sidebar & Overlay */
 .cart-overlay {
   position: fixed;
@@ -496,7 +519,7 @@ button {
   right: -400px;
   width: 100%;
   max-width: 400px;
-  height: 100vh;
+  height: 100dvh;
   background: var(--bg-color);
   border-left: 1px solid var(--border-color);
   z-index: 1000;
@@ -516,11 +539,13 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .cart-items {
   flex-grow: 1;
   overflow-y: auto;
+  min-height: 0;
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
@@ -589,6 +614,7 @@ button {
   padding: 1.5rem;
   border-top: 1px solid var(--border-color);
   background: var(--surface-color);
+  flex-shrink: 0;
 }
 
 .cart-total-row {

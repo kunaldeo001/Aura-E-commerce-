@@ -22,6 +22,9 @@ app.innerHTML = `
             <ion-icon name="search-outline"></ion-icon>
           </button>
         </div>
+        <button class="icon-btn" id="theme-toggle" aria-label="Toggle Theme">
+          <ion-icon name="moon-outline"></ion-icon>
+        </button>
         <button class="icon-btn" id="wishlist-btn" aria-label="Wishlist">
           <ion-icon name="heart-outline" id="wishlist-icon"></ion-icon>
           <span class="cart-badge" id="wishlist-counter" style="background: #ef4444;">0</span>
@@ -83,6 +86,7 @@ app.innerHTML = `
           <input type="range" id="price-min" min="0" max="50000" value="0" step="500" class="price-range">
           <input type="range" id="price-max" min="0" max="50000" value="50000" step="500" class="price-range">
         </div>
+        <button class="btn" onclick="window.clearFilters()" style="padding: 0.5rem 1rem; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: var(--radius-full); color: var(--text-secondary);">Clear All</button>
       </div>
     </div>
     <div class="product-grid" id="product-grid">
@@ -150,6 +154,35 @@ app.innerHTML = `
     <div class="modal-content">
       <button class="icon-btn close-modal" id="close-modal"><ion-icon name="close-outline"></ion-icon></button>
       <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Checkout Modal -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-content" style="max-width: 500px; padding: 2rem;">
+      <button class="icon-btn close-modal" id="close-checkout-modal" style="top: 0.5rem; right: 0.5rem;"><ion-icon name="close-outline"></ion-icon></button>
+      <h2 style="margin-bottom: 1.5rem">Complete Your Order</h2>
+      <form id="checkout-form">
+        <div style="margin-bottom: 1rem;">
+          <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Shipping Address</label>
+          <textarea id="checkout-address" required placeholder="123 Aura Street, Tech City..." style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:var(--text-primary); font-family:inherit; resize:vertical; min-height:80px;"></textarea>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Payment Method</label>
+          <select id="checkout-payment" required style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:var(--text-primary); font-family:inherit; appearance:none;">
+            <option value="" disabled selected>Select a payment method...</option>
+            <option value="Credit Card">Credit Card</option>
+            <option value="PayPal">PayPal</option>
+            <option value="Apple Pay">Apple Pay</option>
+            <option value="Cash on Delivery">Cash on Delivery</option>
+          </select>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color);">
+          <span style="color:var(--text-secondary)">Total Amount:</span>
+          <span id="checkout-total-display" style="font-size:1.25rem; font-weight:700;">₹0</span>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Place Order</button>
+      </form>
     </div>
   </div>
 
@@ -286,6 +319,28 @@ async function initApp() {
   document.getElementById('close-wishlist').addEventListener('click', toggleWishlist);
   document.getElementById('wishlist-overlay').addEventListener('click', toggleWishlist);
   updateWishlistBadge();
+
+  // Theme Toggle logic
+  const themeToggle = document.getElementById('theme-toggle');
+  const savedTheme = localStorage.getItem('aura-theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+
+  themeToggle.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('aura-theme', newTheme);
+    updateThemeIcon(newTheme);
+  });
+
+  function updateThemeIcon(theme) {
+    const icon = themeToggle.querySelector('ion-icon');
+    icon.setAttribute('name', theme === 'dark' ? 'moon-outline' : 'sunny-outline');
+  }
+
+  // Scroll Reveal Initialization
+  initScrollReveal();
 
   // Newsletter form
   document.getElementById('newsletter-form').addEventListener('submit', async (e) => {
@@ -487,10 +542,33 @@ async function openProductModal(productId) {
       <div class="reviews-section" id="reviews-section">
         <p style="color:var(--text-secondary); text-align:center;">Loading reviews…</p>
       </div>
+      
+      <!-- Related Products -->
+      <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-color);">
+        <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">You May Also Like</h3>
+        <div id="related-products" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+          <!-- Related products will be injected here -->
+        </div>
+      </div>
     </div>
   `;
   document.getElementById('product-modal').classList.add('open');
   window.closeModal = closeProductModal;
+
+  // Render Related Products
+  const related = products.filter(p => p.category === product.category && p.id !== productId).slice(0, 2);
+  const relatedContainer = document.getElementById('related-products');
+  if (related.length > 0) {
+    relatedContainer.innerHTML = related.map(p => `
+      <div class="related-card" style="cursor:pointer;" onclick="window.openProductModal(${p.id})">
+        <img src="${p.image}" style="width:100%; aspect-ratio:1; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:0.5rem;">
+        <div style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+        <div style="font-size:0.8rem; color:var(--accent-color);">₹${p.price.toLocaleString('en-IN')}</div>
+      </div>
+    `).join('');
+  } else {
+    relatedContainer.innerHTML = '<p style="color:var(--text-secondary); font-size:0.85rem;">No similar items found.</p>';
+  }
 
   // Fetch reviews
   try {
@@ -794,3 +872,71 @@ if (document.readyState === 'complete' || document.readyState === 'interactive')
   initTiltEffect();
   initMagneticButtons();
 }
+
+/**
+ * Scroll Reveal Intersection Observer
+ */
+const initScrollReveal = () => {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => { 
+      if (entry.isIntersecting) {
+        entry.target.classList.add('active');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  const watch = () => {
+    document.querySelectorAll('.product-card, .hero-badge, .hero-title, .hero-desc, .btn, .section-title, .site-footer').forEach(el => {
+      if (!el.classList.contains('reveal')) el.classList.add('reveal');
+      observer.observe(el);
+    });
+  };
+
+  watch();
+  // Watch for new products being added
+  const grid = document.getElementById('product-grid');
+  if (grid) {
+    new MutationObserver(watch).observe(grid, { childList: true });
+  }
+};
+
+/**
+ * Clear Filters Logic
+ */
+window.clearFilters = () => {
+  currentCategory = 'All';
+  currentSearch = '';
+  currentSort = '';
+  currentMinPrice = 0;
+  currentMaxPrice = 50000;
+
+  // Reset UI
+  document.getElementById('search-input').value = '';
+  const searchContainer = document.getElementById('search-container');
+  if (searchContainer) searchContainer.classList.remove('active');
+  
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-category') === 'All');
+  });
+  
+  const sortSelect = document.getElementById('sort-select');
+  if (sortSelect) sortSelect.value = '';
+  
+  const priceMin = document.getElementById('price-min');
+  const priceMax = document.getElementById('price-max');
+  if (priceMin) priceMin.value = 0;
+  if (priceMax) priceMax.value = 50000;
+  
+  const minLabel = document.getElementById('price-min-label');
+  const maxLabel = document.getElementById('price-max-label');
+  if (minLabel) minLabel.textContent = '0';
+  if (maxLabel) maxLabel.textContent = '50,000';
+
+  handleFiltersChanged();
+};

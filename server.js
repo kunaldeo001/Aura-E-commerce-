@@ -142,12 +142,17 @@ app.post('/api/newsletter', async (req, res) => {
 
 /* Checkout Route */
 app.post('/api/checkout', authenticateToken, async (req, res) => {
-    const { items, total } = req.body;
+    const { items, total, address, paymentMethod } = req.body;
     if (!items || items.length === 0) return res.status(400).json({ error: 'Cart is empty' });
+    if (!address) return res.status(400).json({ error: 'Address is required' });
+    if (!paymentMethod) return res.status(400).json({ error: 'Payment method is required' });
 
     try {
         await db.run('BEGIN TRANSACTION');
-        const orderResult = await db.run('INSERT INTO orders (user_id, total) VALUES (?, ?)', [req.user.id, total]);
+        const orderResult = await db.run(
+            'INSERT INTO orders (user_id, total, address, payment_method) VALUES (?, ?, ?, ?)', 
+            [req.user.id, total, address, paymentMethod]
+        );
         const orderId = orderResult.lastID;
 
         const stmt = await db.prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');

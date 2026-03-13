@@ -101,20 +101,47 @@ function toggleCart() {
   cartOverlay.classList.toggle('open');
 }
 
-async function handleCheckout() {
+function handleCheckout() {
   if (cart.length === 0) return;
 
-  // Check if user is logged in
   const token = localStorage.getItem('aura_token');
   if (!token) {
-    alert('Please log in to checkout.');
+    if (window.showToast) window.showToast('Please log in to checkout.', 'error');
+    else alert('Please log in to checkout.');
     if (window.switchAuthMode) window.switchAuthMode('login');
     toggleCart();
     return;
   }
 
+  // Populate total and open modal
+  const total = calculateTotal();
+  document.getElementById('checkout-total-display').textContent = `₹${total.toLocaleString('en-IN')}`;
+  document.getElementById('checkout-modal').classList.add('open');
+  toggleCart(); // Close cart sidebar
+
+  // Close modal listener
+  document.getElementById('close-checkout-modal').onclick = () => {
+    document.getElementById('checkout-modal').classList.remove('open');
+  };
+  
+  // Clean up previous listeners if any (simple approach for this project)
+  const form = document.getElementById('checkout-form');
+  form.onsubmit = submitCheckoutForm;
+}
+
+async function submitCheckoutForm(e) {
+  e.preventDefault();
+  
+  const token = localStorage.getItem('aura_token');
   const items = cart.map(item => ({ id: item.id, quantity: item.quantity, price: item.price }));
   const total = calculateTotal();
+  const address = document.getElementById('checkout-address').value;
+  const paymentMethod = document.getElementById('checkout-payment').value;
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  const originalText = btn.textContent;
+  btn.textContent = 'Processing...';
+  btn.disabled = true;
 
   try {
     const response = await fetch('http://localhost:3000/api/checkout', {
@@ -123,21 +150,33 @@ async function handleCheckout() {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ items, total })
+      body: JSON.stringify({ items, total, address, paymentMethod })
     });
 
+    const data = await response.json();
+    
     if (!response.ok) {
-      const data = await response.json();
       throw new Error(data.error || 'Checkout failed');
     }
 
-    const data = await response.json();
-    alert(`Thank you for your purchase! Order ID: ${data.orderId}`);
+    if (window.showToast) {
+      window.showToast(`Order #${data.orderId} placed successfully! 🎉`, 'success');
+    } else {
+      alert(`Thank you for your purchase! Order ID: ${data.orderId}`);
+    }
+    
+    // Reset and close
     cart = [];
     updateCartUI();
-    toggleCart();
+    document.getElementById('checkout-modal').classList.remove('open');
+    e.target.reset();
+    
   } catch (err) {
-    alert(err.message);
+    if (window.showToast) window.showToast(err.message, 'error');
+    else alert(err.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
   }
 }
 
