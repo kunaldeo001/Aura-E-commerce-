@@ -24,6 +24,60 @@ export function initCart() {
   document.getElementById('close-cart').addEventListener('click', toggleCart);
   cartOverlay.addEventListener('click', toggleCart);
   document.getElementById('checkout-btn').addEventListener('click', handleCheckout);
+  
+  const applyPromoBtn = document.getElementById('apply-promo-btn');
+  if(applyPromoBtn) {
+    applyPromoBtn.addEventListener('click', applyPromo);
+  }
+}
+
+let currentPromo = null;
+
+async function applyPromo() {
+  const codeEl = document.getElementById('checkout-promo');
+  const msgEl = document.getElementById('promo-message');
+  if(!codeEl || !codeEl.value) return;
+  const code = codeEl.value.trim();
+  
+  msgEl.textContent = 'Validating...';
+  msgEl.style.color = 'var(--text-secondary)';
+  
+  try {
+    const res = await fetch('http://localhost:3000/api/coupons/validate', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error);
+    
+    currentPromo = data;
+    msgEl.textContent = `Promo applied! ${data.type === 'percentage' ? data.value + '%' : '₹' + data.value.toLocaleString('en-IN')} off.`;
+    msgEl.style.color = '#10b981';
+    
+    // Update total
+    updateCheckoutTotalDisplay();
+  } catch(err) {
+    currentPromo = null;
+    msgEl.textContent = err.message;
+    msgEl.style.color = '#ef4444';
+    updateCheckoutTotalDisplay();
+  }
+}
+
+function updateCheckoutTotalDisplay() {
+  const totalDisplay = document.getElementById('checkout-total-display');
+  if(!totalDisplay) return;
+  
+  let total = calculateTotal();
+  if(currentPromo) {
+    if(currentPromo.type === 'percentage') {
+      total = total * (1 - currentPromo.value / 100);
+    } else {
+      total = Math.max(0, total - currentPromo.value);
+    }
+  }
+  totalDisplay.textContent = `₹${total.toLocaleString('en-IN')}`;
 }
 
 function injectCartHTML() {
@@ -114,8 +168,13 @@ function handleCheckout() {
   }
 
   // Populate total and open modal
-  const total = calculateTotal();
-  document.getElementById('checkout-total-display').textContent = `₹${total.toLocaleString('en-IN')}`;
+  currentPromo = null;
+  const promoInput = document.getElementById('checkout-promo');
+  const promoMsg = document.getElementById('promo-message');
+  if(promoInput) promoInput.value = '';
+  if(promoMsg) promoMsg.textContent = '';
+  updateCheckoutTotalDisplay();
+  
   document.getElementById('checkout-modal').classList.add('open');
   toggleCart(); // Close cart sidebar
 
@@ -134,7 +193,19 @@ async function submitCheckoutForm(e) {
   
   const token = localStorage.getItem('aura_token');
   const items = cart.map(item => ({ id: item.id, quantity: item.quantity, price: item.price }));
-  const total = calculateTotal();
+  
+  let total = calculateTotal();
+  let discount = 0;
+  if(currentPromo) {
+    const originalTotal = total;
+    if(currentPromo.type === 'percentage') {
+      total = total * (1 - currentPromo.value / 100);
+    } else {
+      total = Math.max(0, total - currentPromo.value);
+    }
+    discount = originalTotal - total;
+  }
+  
   const address = document.getElementById('checkout-address').value;
   const paymentMethod = document.getElementById('checkout-payment').value;
 
@@ -150,7 +221,7 @@ async function submitCheckoutForm(e) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ items, total, address, paymentMethod })
+      body: JSON.stringify({ items, total, address, paymentMethod, discount, promo_code: currentPromo ? currentPromo.code : null })
     });
 
     const data = await response.json();

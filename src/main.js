@@ -167,7 +167,7 @@ app.innerHTML = `
           <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Shipping Address</label>
           <textarea id="checkout-address" required placeholder="123 Aura Street, Tech City..." style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:var(--text-primary); font-family:inherit; resize:vertical; min-height:80px;"></textarea>
         </div>
-        <div style="margin-bottom: 1.5rem;">
+        <div style="margin-bottom: 1rem;">
           <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Payment Method</label>
           <select id="checkout-payment" required style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:var(--text-primary); font-family:inherit; appearance:none;">
             <option value="" disabled selected>Select a payment method...</option>
@@ -176,6 +176,14 @@ app.innerHTML = `
             <option value="Apple Pay">Apple Pay</option>
             <option value="Cash on Delivery">Cash on Delivery</option>
           </select>
+        </div>
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Promo Code</label>
+          <div style="display:flex; gap:0.5rem;">
+            <input type="text" id="checkout-promo" placeholder="Enter code (e.g., WELCOME10)" style="flex:1; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:var(--text-primary); font-family:inherit;">
+            <button type="button" class="btn btn-primary" id="apply-promo-btn" style="padding:0.8rem 1.5rem; border-radius:var(--radius-sm);">Apply</button>
+          </div>
+          <small id="promo-message" style="display:block; margin-top:0.5rem;"></small>
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color);">
           <span style="color:var(--text-secondary)">Total Amount:</span>
@@ -196,16 +204,42 @@ app.innerHTML = `
     </div>
   </div>
 
-  <!-- Orders Modal -->
-  <div class="modal-overlay" id="orders-modal">
-    <div class="modal-content" style="max-width: 600px; padding: 2rem;">
-      <button class="icon-btn close-modal" id="close-orders-modal" style="top: 0.5rem; right: 0.5rem;"><ion-icon name="close-outline"></ion-icon></button>
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h2>Order History</h2>
-        <button class="btn" onclick="window.logout()" style="border: 1px solid var(--border-color); color: var(--text-secondary); padding: 0.5rem 1rem;">Logout</button>
+  <!-- Profile Modal -->
+  <div class="modal-overlay" id="profile-modal">
+    <div class="modal-content" style="max-width: 700px; padding: 0; overflow:hidden;">
+      <button class="icon-btn close-modal" id="close-profile-modal" style="top: 1rem; right: 1rem; z-index:10;"><ion-icon name="close-outline"></ion-icon></button>
+      <div style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
+        <button class="tab-btn active" id="tab-btn-profile" onclick="window.switchTab('profile')" style="flex:1; padding:1.2rem; font-weight:600; border-right:1px solid var(--border-color);">My Details</button>
+        <button class="tab-btn" id="tab-btn-orders" onclick="window.switchTab('orders')" style="flex:1; padding:1.2rem; font-weight:600;">Order History</button>
       </div>
-      <div id="orders-list" style="max-height: 400px; overflow-y: auto;">
-        <!-- Orders will be injected here -->
+      <div style="padding: 2rem;">
+        <div id="content-profile" class="tab-content" style="display:block;">
+          <h2 style="margin-bottom:1.5rem;">Profile Details</h2>
+          <form id="profile-form">
+            <div style="margin-bottom: 1rem;">
+              <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Name</label>
+              <input type="text" id="profile-name" required style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:white;">
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">Email</label>
+              <input type="email" id="profile-email" required style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:white;">
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+              <label style="display:block; margin-bottom:0.5rem; color:var(--text-secondary)">New Password (optional)</label>
+              <input type="password" id="profile-password" placeholder="Leave blank to keep current" style="width:100%; padding:0.8rem; border-radius:var(--radius-sm); border:1px solid var(--border-color); background:var(--surface-color); color:white;">
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+              <button type="submit" class="btn btn-primary" style="flex:1;">Save Changes</button>
+              <button type="button" class="btn" onclick="window.logout()" style="border: 1px solid var(--border-color); color: #ef4444; padding:0.8rem 1.5rem;">Logout</button>
+            </div>
+          </form>
+        </div>
+        <div id="content-orders" class="tab-content" style="display:none;">
+          <h2 style="margin-bottom:1.5rem;">Your Orders</h2>
+          <div id="orders-list" style="max-height: 350px; overflow-y: auto; padding-right:10px;">
+            <!-- Orders injected here -->
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -248,7 +282,76 @@ async function initApp() {
   searchInput.addEventListener('input', (e) => {
     currentSearch = e.target.value;
     handleFiltersChanged();
+    updateSearchSuggestions();
   });
+
+  // Support Widget
+  const supportWidget = document.getElementById('support-widget');
+  document.getElementById('support-fab').addEventListener('click', () => {
+    supportWidget.classList.toggle('open');
+  });
+  document.getElementById('close-chat').addEventListener('click', () => {
+    supportWidget.classList.remove('open');
+  });
+  
+  const chatForm = document.getElementById('chat-form');
+  const chatMessages = document.getElementById('chat-messages');
+  chatForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if(!text) return;
+
+    // Add user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user-msg';
+    userMsg.textContent = text;
+    chatMessages.appendChild(userMsg);
+    input.value = '';
+
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    // Simulate bot reply
+    setTimeout(() => {
+      const botMsg = document.createElement('div');
+      botMsg.className = 'message support-msg';
+      botMsg.textContent = "Thanks for your message! Our team will get back to you shortly.";
+      chatMessages.appendChild(botMsg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }, 1000);
+  });
+
+function updateSearchSuggestions() {
+  const suggestionsBox = document.getElementById('search-suggestions');
+  if (!currentSearch.trim()) {
+    suggestionsBox.classList.remove('show');
+    return;
+  }
+  
+  // Quick clientside search
+  const matches = window.allProductsCache.filter(p => 
+    p.name.toLowerCase().includes(currentSearch.toLowerCase()) || 
+    p.category.toLowerCase().includes(currentSearch.toLowerCase())
+  ).slice(0, 5); // top 5 results
+  
+  if (matches.length > 0) {
+    suggestionsBox.innerHTML = matches.map(p => `
+      <div class="suggestion-item" onclick="window.viewProductDetail(${p.id})">
+        <img src="${p.image}" class="suggestion-img">
+        <div class="suggestion-details">
+          <span class="suggestion-title">${p.name}</span>
+          <span class="suggestion-price">₹${p.price.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    `).join('');
+    suggestionsBox.classList.add('show');
+  } else {
+    suggestionsBox.innerHTML = '<div style="padding: 1rem; color:var(--text-secondary); text-align:center;">No results found</div>';
+    suggestionsBox.classList.add('show');
+  }
+}
+
 
   // Category filtering
   const filterBtns = document.querySelectorAll('.filter-btn');
@@ -290,7 +393,7 @@ async function initApp() {
   // Auth logic
   document.getElementById('auth-btn').addEventListener('click', () => {
     if (currentUser) {
-      openOrdersModal();
+      openProfileModal();
     } else {
       openAuthModal('login');
     }
@@ -305,14 +408,16 @@ async function initApp() {
     }
   });
 
-  document.getElementById('close-orders-modal').addEventListener('click', () => {
-    document.getElementById('orders-modal').classList.remove('open');
+  document.getElementById('close-profile-modal').addEventListener('click', () => {
+    document.getElementById('profile-modal').classList.remove('open');
   });
-  document.getElementById('orders-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'orders-modal') {
-      document.getElementById('orders-modal').classList.remove('open');
+  document.getElementById('profile-modal').addEventListener('click', (e) => {
+    if (e.target.id === 'profile-modal') {
+      document.getElementById('profile-modal').classList.remove('open');
     }
   });
+
+  document.getElementById('profile-form').addEventListener('submit', handleProfileUpdate);
 
   // Wishlist logic
   document.getElementById('wishlist-btn').addEventListener('click', toggleWishlist);
@@ -369,6 +474,12 @@ async function initApp() {
   window.logout = logout;
   window.toggleWishlistProduct = toggleWishlistProduct;
   window.submitReview = submitReview;
+  window.switchTab = switchTab;
+  window.viewProductDetail = (id) => {
+    document.getElementById('search-suggestions').classList.remove('show');
+    document.getElementById('search-container').classList.remove('active');
+    openProductModal(id);
+  };
 }
 
 function checkAuth() {
@@ -387,17 +498,65 @@ function logout() {
   localStorage.removeItem('aura_token');
   localStorage.removeItem('aura_user');
   checkAuth();
-  document.getElementById('orders-modal').classList.remove('open');
+  document.getElementById('profile-modal').classList.remove('open');
   window.showToast('Logged out successfully', 'info');
 }
 
-async function openOrdersModal() {
+async function handleProfileUpdate(e) {
+  e.preventDefault();
+  const token = localStorage.getItem('aura_token');
+  const name = document.getElementById('profile-name').value;
+  const email = document.getElementById('profile-email').value;
+  const password = document.getElementById('profile-password').value;
+
+  try {
+    const res = await fetch('http://localhost:3000/api/users/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ name, email, password: password || undefined })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    
+    // Update local user data
+    currentUser.name = name;
+    currentUser.email = email;
+    localStorage.setItem('aura_user', JSON.stringify(currentUser));
+    
+    window.showToast('Profile updated successfully!', 'success');
+    document.getElementById('profile-password').value = '';
+  } catch(err) {
+    window.showToast(err.message, 'error');
+  }
+}
+
+function switchTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+  
+  document.getElementById(`content-${tabId}`).style.display = 'block';
+  document.getElementById(`tab-btn-${tabId}`).classList.add('active');
+}
+
+async function openProfileModal() {
   const token = localStorage.getItem('aura_token');
   if (!token) return;
 
+  // Set Profile form values
+  if(currentUser) {
+    document.getElementById('profile-name').value = currentUser.name || '';
+    document.getElementById('profile-email').value = currentUser.email || '';
+  }
+
   const ordersList = document.getElementById('orders-list');
   ordersList.innerHTML = '<p style="text-align:center; color:var(--text-secondary)">Loading orders...</p>';
-  document.getElementById('orders-modal').classList.add('open');
+  document.getElementById('profile-modal').classList.add('open');
+  
+  // Switch to profile tab by default
+  switchTab('profile');
 
   try {
     const response = await fetch('http://localhost:3000/api/orders', {
@@ -533,9 +692,12 @@ async function openProductModal(productId) {
           <ion-icon name="${heartIcon}"></ion-icon>
         </button>
       </div>
-      <h2 class="modal-title">${product.name}</h2>
-      <p class="modal-price">$${product.price.toFixed(2)}</p>
-      <p class="modal-desc">${product.description || 'Experience premium quality and exquisite design. Carefully crafted to elevate your everyday style and performance.'}</p>
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem">${product.name}</h2>
+        <div style="color: var(--accent-color); font-weight: 500; margin-bottom: 1rem">${product.category}</div>
+        <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem">₹${product.price.toLocaleString('en-IN')}</div>
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem">
+          ${product.description || 'Experience premium quality and exquisite design. Carefully crafted to elevate your everyday style and performance.'}
+        </p>
       <button class="btn btn-primary btn-full" onclick="window.addToCart(${product.id}); closeModal();">
         <ion-icon name="cart-outline" style="margin-right:8px;"></ion-icon> Add to Cart — $${product.price.toFixed(2)}
       </button>

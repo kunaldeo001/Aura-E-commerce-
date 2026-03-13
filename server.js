@@ -49,11 +49,20 @@ app.post('/api/auth/login', async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: 'Missing fields' });
 
     try {
-        const user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
-        if (!user) return res.status(400).json({ error: 'User not found' });
-
-        const match = await bcrypt.compare(password, user.password_hash);
-        if (!match) return res.status(400).json({ error: 'Invalid password' });
+        let user = await db.get('SELECT * FROM users WHERE email = ?', [email]);
+        
+        // Auto-create user if they don't exist
+        if (!user) {
+            const hash = await bcrypt.hash(password, 10);
+            // Derive a placeholder name from the email
+            const name = email.split('@')[0];
+            const result = await db.run('INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)', [name, email, hash]);
+            user = { id: result.lastID, name: name, email: email, password_hash: hash };
+        } else {
+            // Verify password if user DOES exist
+            const match = await bcrypt.compare(password, user.password_hash);
+            if (!match) return res.status(400).json({ error: 'Invalid password' });
+        }
 
         const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '24h' });
         res.json({ token, user: { id: user.id, name: user.name, email: user.email } });

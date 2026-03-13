@@ -33,6 +33,33 @@
     </div>
   </div>
 
+  <!-- Support Widget -->
+  <div class="support-widget" id="support-widget">
+    <button class="support-fab" id="support-fab" aria-label="Contact Support">
+      <ion-icon name="chatbubble-ellipses-outline" id="fab-icon"></ion-icon>
+    </button>
+    <div class="support-chat" id="support-chat">
+      <div class="chat-header">
+        <h4>Aura Assistant</h4>
+        <button class="icon-btn close-chat" id="close-chat" style="color:white;"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+      <div class="search-container" id="search-container">
+        <input type="text" id="search-input" class="search-input" placeholder="Search...">
+        <button class="icon-btn" id="search-btn" aria-label="Search">
+          <ion-icon name="search-outline"></ion-icon>
+        </button>
+        <div id="search-suggestions" class="search-suggestions"></div>
+      </div>
+      <div class="chat-body" id="chat-messages">
+        <div class="message support-msg">Hi there! 👋 I'm the Aura Assistant. How can I help you style your everyday life today?</div>
+      </div>
+      <form class="chat-footer" id="chat-form">
+        <input type="text" id="chat-input" placeholder="Type a message..." required style="flex:1; padding:0.6rem; border-radius:var(--radius-full); border:1px solid var(--border-color); background:var(--bg-color); color:var(--text-primary); outline:none;">
+        <button type="submit" class="btn btn-primary" style="border-radius:var(--radius-full); padding:0.6rem 1rem;"><ion-icon name="send"></ion-icon></button>
+      </form>
+    </div>
+  </div>
+
   <!-- App Container -->
   <div id="app"></div>
   <script type="module" src="/src/main.js"></script>
