@@ -43,7 +43,7 @@ async function applyPromo() {
   msgEl.style.color = 'var(--text-secondary)';
   
   try {
-    const res = await fetch('http://localhost:3000/api/coupons/validate', {
+    const res = await fetch('/api/coupons/validate', {
        method: 'POST',
        headers: { 'Content-Type': 'application/json' },
        body: JSON.stringify({ code })
@@ -215,7 +215,7 @@ async function submitCheckoutForm(e) {
   btn.disabled = true;
 
   try {
-    const response = await fetch('http://localhost:3000/api/checkout', {
+    const response = await fetch('/api/checkout', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

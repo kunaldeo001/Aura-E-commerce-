@@ -232,7 +232,11 @@ app.post('/api/coupons/validate', async (req, res) => {
 // Start DB then Server
 initDb().then(database => {
     db = database;
-    app.listen(PORT, () => {
-        console.log(`Backend server running on http://localhost:${PORT}`);
-    });
+    if (process.env.NODE_ENV !== 'production') {
+        app.listen(PORT, () => {
+            console.log(`Backend server running on http://localhost:${PORT}`);
+        });
+    }
 }).catch(console.error);
+
+export default app;

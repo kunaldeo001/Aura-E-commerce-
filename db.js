@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -83,8 +84,20 @@ const initialProducts = [
 ];
 
 export async function initDb() {
+    let dbPath = path.join(__dirname, 'database.sqlite');
+    
+    // In Vercel, the file system is read-only except for /tmp
+    if (process.env.VERCEL) {
+        const tmpPath = path.join('/tmp', 'database.sqlite');
+        if (!fs.existsSync(tmpPath)) {
+            console.log('Production detected. Copying database to /tmp for write access...');
+            fs.copyFileSync(dbPath, tmpPath);
+        }
+        dbPath = tmpPath;
+    }
+
     const db = await open({
-        filename: path.join(__dirname, 'database.sqlite'),
+        filename: dbPath,
         driver: sqlite3.Database
     });
 

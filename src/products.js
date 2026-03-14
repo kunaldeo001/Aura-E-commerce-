@@ -4,8 +4,8 @@ export let allProducts = [];
 async function fetchProducts(params = new URLSearchParams()) {
     const queryString = params.toString();
     const url = queryString
-        ? `http://localhost:3000/api/products?${queryString}`
-        : 'http://localhost:3000/api/products';
+        ? `/api/products?${queryString}`
+        : '/api/products';
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);

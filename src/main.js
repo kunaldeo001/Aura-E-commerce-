@@ -453,7 +453,7 @@ function updateSearchSuggestions() {
     e.preventDefault();
     const email = document.getElementById('newsletter-email').value;
     try {
-      const res = await fetch('http://localhost:3000/api/newsletter', {
+      const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email })
@@ -511,7 +511,7 @@ async function handleProfileUpdate(e) {
   const password = document.getElementById('profile-password').value;
 
   try {
-    const res = await fetch('http://localhost:3000/api/users/profile', {
+    const res = await fetch('/api/users/profile', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -560,7 +560,7 @@ async function openProfileModal() {
   switchTab('profile');
 
   try {
-    const response = await fetch('http://localhost:3000/api/orders', {
+    const response = await fetch('/api/orders', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     if (!response.ok) throw new Error('Failed to fetch orders');
@@ -644,7 +644,7 @@ async function handleAuthSubmit(mode) {
   }
 
   try {
-    const response = await fetch(`http://localhost:3000/api/auth/${mode}`, {
+    const response = await fetch(`/api/auth/${mode}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
@@ -735,7 +735,7 @@ async function openProductModal(productId) {
 
   // Fetch reviews
   try {
-    const res = await fetch(`http://localhost:3000/api/products/${productId}/reviews`);
+    const res = await fetch(`/api/products/${productId}/reviews`);
     const { reviews, averageRating } = await res.json();
     renderReviews(reviews, averageRating, productId);
   } catch (e) {
