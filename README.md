@@ -70,7 +70,7 @@ This project requires both the backend and frontend to be running.
 - **JWT Secret**: Managed in `server.js` (default provided for development).
 - **Backend Port**: 3000 (configurable in `server.js`).
 
-### 📁 Project Structure
+#### 📁 Project Structure
 
 ```text
 ├── src/
